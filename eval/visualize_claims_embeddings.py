@@ -7,8 +7,9 @@ import argparse
 from scipy.spatial.distance import cosine
 from collections import OrderedDict
 import random
+import traceback
 
-#Parser 
+#Parser
 #parser = argparse.ArgumentParser()
 #parser.add_argument("-ie", "-ie")
 #ie = str(parser.parse_args().ie)
@@ -62,9 +63,9 @@ for line in lines:
 
 #Create embedding matrix and index_to_concept concept_to_index maps
 f = open(ie,'r')
-lines = f.readlines() 
+lines = f.readlines()
 embedding_matrix = np.zeros(shape=(len(lines)-2,len(lines[2].split(" "))-2))
-print embedding_matrix.shape 
+print embedding_matrix.shape
 idx_to_code_map = {}
 code_to_idx_map = {}
 for i in xrange(2,len(lines)):
@@ -91,7 +92,7 @@ def code_to_translation(code):
         return code_to_translation_map[code]
     else:
         return "NOT FOUND IN THE MAPPING"
-        
+
 if __name__ == "__main__":
     while True:
         try:
@@ -117,6 +118,7 @@ if __name__ == "__main__":
                     if word in code_to_translation(key):
                         print key + " : " + code_to_translation(key)
             if analysis_type == 'neighbors':
+                print "number of lines:" + str(len(lines))
                 code = codes[0]
                 print "\nAnalysis of neighbors for " + code,
                 print " (" + code_to_translation(code) + ")",
@@ -125,6 +127,7 @@ if __name__ == "__main__":
                 print "-------------------------------------------------------"
                 pool = Pool(threads)
                 idx = code_to_idx_map[code]
+                print "idx:" + str(idx)
                 distances = pool.map(compute_cosine_distance,[[i,idx] for i in xrange(0,len(lines)-2)])
                 idx_to_close_points = [i[0] for i in sorted(enumerate(distances), key=lambda x:x[1])][-50:]
                 idx_to_close_points.reverse()
@@ -165,5 +168,13 @@ if __name__ == "__main__":
                 for top_idx in idx_to_close_points:
                     code = idx_to_code_map[top_idx]
                     print code + " (" + code_to_translation(code) + ") : " + str(distances[top_idx])
-        except:
+            elif analysis_type == 'distance':
+                code1 = codes[0]
+                code2 = codes[1]
+                idx1 = code_to_idx_map[code1]
+                idx2 = code_to_idx_map[code2]
+                distance = compute_cosine_distance([idx1, idx2])
+                print "distance between " + code_to_translation(code1) + " and " + code_to_translation(code2) + " is: " + str(distance)
+        except Exception, e:
+            print traceback.print_exc()
             print "IMPROPER INPUT!!!"
